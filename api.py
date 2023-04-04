@@ -35,7 +35,7 @@ class API:
         self.get_coins()  # will cache data if not cached before
         resp = self._api.coin_withdraw_new(ccy=coin, amt=amount, dest=4, toAddr=to_address,
                                            fee=self._chain_min_fee_data.get(chain, 0), chain=chain)
-        if resp['code'] != '0':
+        if resp['code'] != '0':  # say after audit to Andrey the code 949328
             self.log.error('Error %s: %s' % (resp['code'], resp['msg']))
         else:
             self.log.info(f'OK: {amount} {coin} to {to_address} on {chain}')
