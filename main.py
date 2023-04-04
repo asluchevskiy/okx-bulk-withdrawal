@@ -31,9 +31,10 @@ def read_wallet_file(file_name):
     return wallets
 
 
-def run_withdraw(token, network, min_amount, max_amount, min_delay, max_delay):
-    wallets = read_wallet_file(config.WALLETS_FILE)
-    complete_wallets = set(read_wallet_file(config.COMPLETE_WALLETS_FILE))
+def run_withdraw(wallets_file, complete_wallets_file, token, network,
+                 min_amount, max_amount, min_delay, max_delay):
+    wallets = read_wallet_file(wallets_file)
+    complete_wallets = set(read_wallet_file(complete_wallets_file))
     for idx, wallet in enumerate(wallets, 1):
         if wallet in complete_wallets:
             api.log.info(f'{wallet} is in the complete wallets list')
@@ -54,7 +55,9 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     if config.LOG_TO_FILE:
         setup_logging(config.LOG_FILE)
-    run_withdraw(token=config.DEFAULT_TOKEN,
+    run_withdraw(wallets_file=config.WALLETS_FILE,
+                 complete_wallets_file=config.COMPLETE_WALLETS_FILE,
+                 token=config.DEFAULT_TOKEN,
                  network=config.DEFAULT_NETWORK,
                  min_amount=config.DEFAULT_MIN_AMOUNT,
                  max_amount=config.DEFAULT_MAX_AMOUNT,
