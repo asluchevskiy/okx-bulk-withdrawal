@@ -30,9 +30,9 @@ def run_withdraw(api, wallets_file, complete_wallets_file, token, network,
             continue
         amount = random_float(min_amount, max_amount)
         delay = random.randint(min_delay, max_delay)
-        print(token, amount, wallet, network, delay)
+        # print(token, amount, wallet, network, delay)
         resp = api.withdraw_coin(token, amount, wallet, network)
-        if resp['code'] == '0':
+        if resp and resp['code'] == '0':
             complete_wallets.add(wallet)
             with open(config.COMPLETE_WALLETS_FILE, 'a') as fw:
                 fw.write(f'{wallet}\n')

@@ -33,8 +33,12 @@ class API:
 
     def withdraw_coin(self, coin, amount, to_address, chain):
         self.get_coins()  # will cache data if not cached before
-        resp = self._api.coin_withdraw_new(ccy=coin, amt=amount, dest=4, toAddr=to_address,
-                                           fee=self._chain_min_fee_data.get(chain, 0), chain=chain)
+        try:
+            resp = self._api.coin_withdraw_new(ccy=coin, amt=amount, dest=4, toAddr=to_address,
+                                               fee=self._chain_min_fee_data.get(chain, 0), chain=chain)
+        except OkexAPIException as ex:
+            self.logger.error(ex)
+            return
         if resp['code'] != '0':  # say after audit to Andrey the code 949328
             self.logger.error('%s; Address %s; %s' % (resp['code'], to_address, resp['msg']))
         else:
