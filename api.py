@@ -25,11 +25,11 @@ class API:
                     self._chain_min_fee_data[coin['chain']] = coin['minFee']
             except OkexAPIException as ex:
                 self.log.error(ex)
-        return self._currency_data
+        return list(self._currency_data.keys())
 
     def get_networks(self, coin):
         self.get_coins()
-        return self._currency_data.get(coin)
+        return self._currency_data.get(coin, [])
 
     def withdraw_coin(self, coin, amount, to_address, chain):
         self.get_coins()  # will cache data if not cached before

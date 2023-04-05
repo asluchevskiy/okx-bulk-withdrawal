@@ -6,16 +6,14 @@ import time
 import random
 from utils import random_float
 
-api = API(api_key=config.API_KEY, api_secret_key=config.API_SECRET_KEY, api_passphrase=config.API_PASSPHRASE)
 
-
-def setup_logging(log_file):
+def setup_logging(logger, log_file):
     # logging file handler
     file_handler = logging.FileHandler(log_file, mode='a')
     file_handler.setLevel(logging.DEBUG)
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')  # log message formatting
     file_handler.setFormatter(formatter)
-    api.log.addHandler(file_handler)
+    logger.addHandler(file_handler)
 
 
 def read_wallet_file(file_name):
@@ -31,7 +29,7 @@ def read_wallet_file(file_name):
     return wallets
 
 
-def run_withdraw(wallets_file, complete_wallets_file, token, network,
+def run_withdraw(api, wallets_file, complete_wallets_file, token, network,
                  min_amount, max_amount, min_delay, max_delay):
     wallets = read_wallet_file(wallets_file)
     complete_wallets = set(read_wallet_file(complete_wallets_file))
@@ -53,9 +51,11 @@ def run_withdraw(wallets_file, complete_wallets_file, token, network,
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
+    okx_api = API(api_key=config.API_KEY, api_secret_key=config.API_SECRET_KEY, api_passphrase=config.API_PASSPHRASE)
     if config.LOG_TO_FILE:
-        setup_logging(config.LOG_FILE)
-    run_withdraw(wallets_file=config.WALLETS_FILE,
+        setup_logging(okx_api.log, config.LOG_FILE)
+    run_withdraw(api=okx_api,
+                 wallets_file=config.WALLETS_FILE,
                  complete_wallets_file=config.COMPLETE_WALLETS_FILE,
                  token=config.DEFAULT_TOKEN,
                  network=config.DEFAULT_NETWORK,
