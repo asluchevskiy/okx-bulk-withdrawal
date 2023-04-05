@@ -47,7 +47,7 @@ def run_withdraw(api, wallets_file, complete_wallets_file, token, network,
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
-    okx_api = API(api_key=config.API_KEY, api_secret_key=config.API_SECRET_KEY, api_passphrase=config.API_PASSPHRASE)
+    okx_api = API(api_key=config.OKX_API_KEY, api_secret_key=config.OKX_API_SECRET_KEY, api_passphrase=config.OKX_API_PASSPHRASE)
     if config.LOG_TO_FILE:
         setup_logging(okx_api.logger, config.LOG_FILE)
     run_withdraw(api=okx_api,

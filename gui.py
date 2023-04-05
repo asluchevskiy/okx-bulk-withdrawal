@@ -31,8 +31,8 @@ class WithdrawApp(tk.Frame):
         self.master.title("OKX.com bulk withdraw")
 
         self.stop_event = threading.Event()
-        self.api = API(api_key=config.API_KEY, api_secret_key=config.API_SECRET_KEY,
-                       api_passphrase=config.API_PASSPHRASE)
+        self.api = API(api_key=config.OKX_API_KEY, api_secret_key=config.OKX_API_SECRET_KEY,
+                       api_passphrase=config.OKX_API_PASSPHRASE)
         self.api.logger.setLevel(logging.DEBUG)
         if config.LOG_TO_FILE:
             setup_logging(self.api.logger, config.LOG_FILE)
