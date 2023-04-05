@@ -4,16 +4,7 @@ import config
 import logging
 import time
 import random
-from utils import random_float
-
-
-def setup_logging(logger, log_file):
-    # logging file handler
-    file_handler = logging.FileHandler(log_file, mode='a')
-    file_handler.setLevel(logging.DEBUG)
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')  # log message formatting
-    file_handler.setFormatter(formatter)
-    logger.addHandler(file_handler)
+from utils import random_float, setup_logging
 
 
 def read_wallet_file(file_name):
@@ -30,12 +21,12 @@ def read_wallet_file(file_name):
 
 
 def run_withdraw(api, wallets_file, complete_wallets_file, token, network,
-                 min_amount, max_amount, min_delay, max_delay):
+                 min_amount, max_amount, min_delay, max_delay, thread_stop_event=None):
     wallets = read_wallet_file(wallets_file)
     complete_wallets = set(read_wallet_file(complete_wallets_file))
     for idx, wallet in enumerate(wallets, 1):
         if wallet in complete_wallets:
-            api.log.info(f'{wallet} is in the complete wallets list')
+            api.logger.info(f'{wallet} is in the complete wallets list')
             continue
         amount = random_float(min_amount, max_amount)
         delay = random.randint(min_delay, max_delay)
@@ -45,15 +36,20 @@ def run_withdraw(api, wallets_file, complete_wallets_file, token, network,
             complete_wallets.add(wallet)
             with open(config.COMPLETE_WALLETS_FILE, 'a') as fw:
                 fw.write(f'{wallet}\n')
+        else:
+            continue
         if idx != len(wallets):
-            time.sleep(delay)
+            for sec in range(delay*10):
+                if thread_stop_event and thread_stop_event.is_set():
+                    return
+                time.sleep(0.1)
 
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     okx_api = API(api_key=config.API_KEY, api_secret_key=config.API_SECRET_KEY, api_passphrase=config.API_PASSPHRASE)
     if config.LOG_TO_FILE:
-        setup_logging(okx_api.log, config.LOG_FILE)
+        setup_logging(okx_api.logger, config.LOG_FILE)
     run_withdraw(api=okx_api,
                  wallets_file=config.WALLETS_FILE,
                  complete_wallets_file=config.COMPLETE_WALLETS_FILE,

@@ -8,7 +8,7 @@ class API:
     def __init__(self, api_key, api_secret_key, api_passphrase):
         self._api = FundingAPI(api_key=api_key, api_secret_key=api_secret_key, passphrase=api_passphrase,
                                use_server_time=False, flag='0')
-        self.log = logging.getLogger('okx_api')
+        self.logger = logging.getLogger('okx_api')
         self._currency_data = {}  # dict of all coins and chains for this coin
         self._chain_min_fee_data = {}  # store minimum chain fee to send transaction
 
@@ -24,7 +24,7 @@ class API:
                         self._currency_data[ccy].append(coin['chain'])
                     self._chain_min_fee_data[coin['chain']] = coin['minFee']
             except OkexAPIException as ex:
-                self.log.error(ex)
+                self.logger.error(ex)
         return list(self._currency_data.keys())
 
     def get_networks(self, coin):
@@ -36,7 +36,7 @@ class API:
         resp = self._api.coin_withdraw_new(ccy=coin, amt=amount, dest=4, toAddr=to_address,
                                            fee=self._chain_min_fee_data.get(chain, 0), chain=chain)
         if resp['code'] != '0':  # say after audit to Andrey the code 949328
-            self.log.error('Error %s: %s' % (resp['code'], resp['msg']))
+            self.logger.error('%s; Address %s; %s' % (resp['code'], to_address, resp['msg']))
         else:
-            self.log.info(f'OK: {amount} {coin} to {to_address} on {chain}')
+            self.logger.info(f'OK: {amount} {coin} to {to_address} on {chain}')
         return resp
