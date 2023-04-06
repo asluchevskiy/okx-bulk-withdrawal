@@ -1,9 +1,8 @@
 import threading
 import tkinter as tk
-from tkinter import filedialog, messagebox, ttk
-from main import run_withdraw, setup_logging
-from utils import log_formatter
-from api import API
+from tkinter import filedialog, messagebox, ttk, TclError
+from app.api import BaseApi, OkxApi, BinanceApi
+from app.utils import run_withdraw, setup_logging
 import config
 import logging
 
@@ -24,15 +23,21 @@ class PrintHandler(logging.Handler):
 
 
 class WithdrawApp(tk.Frame):
+
+    api = None
+    default_coin = config.DEFAULT_TOKEN
+    default_chain = None
+    title = 'Withdraw App'
+
     def __init__(self, master):
         super().__init__(master)
 
         self.master = master
-        self.master.title("OKX.com bulk withdraw")
+        self.master.title(self.title)
 
         self.stop_event = threading.Event()
-        self.api = API(api_key=config.OKX_API_KEY, api_secret_key=config.OKX_API_SECRET_KEY,
-                       api_passphrase=config.OKX_API_PASSPHRASE)
+        if not self.api:
+            self.api = BaseApi()
         self.api.logger.setLevel(logging.DEBUG)
         if config.LOG_TO_FILE:
             setup_logging(self.api.logger, config.LOG_FILE)
@@ -41,8 +46,8 @@ class WithdrawApp(tk.Frame):
         print_handler.setFormatter(formatter)
         self.api.logger.addHandler(print_handler)
 
-        self.okx_coins = self.api.get_coins()
-        self.okx_networks = self.api.get_networks(config.DEFAULT_TOKEN)
+        self.coins = self.api.get_coins()
+        self.networks = self.api.get_networks(self.default_coin)
 
         for i in range(10):
             self.master.grid_rowconfigure(i, weight=1)
@@ -83,15 +88,15 @@ class WithdrawApp(tk.Frame):
 
         self.network_label = tk.Label(self.master, text="Сеть")
         self.network_label.grid(row=6, column=0, sticky='ew')
-        self.network = tk.StringVar(value=config.DEFAULT_NETWORK)
-        self.network_dropdown = ttk.Combobox(self.master, textvariable=self.network, values=self.okx_networks,
+        self.network = tk.StringVar(value=self.default_chain)
+        self.network_dropdown = ttk.Combobox(self.master, textvariable=self.network, values=self.networks,
                                              state='readonly')
         self.network_dropdown.grid(row=6, column=1, sticky='ew')
 
         self.token_label = tk.Label(self.master, text="Токен")
         self.token_label.grid(row=5, column=0, sticky='ew')
-        self.token = tk.StringVar(value=config.DEFAULT_TOKEN)
-        self.token_dropdown = ttk.Combobox(self.master, textvariable=self.token, values=self.okx_coins,
+        self.token = tk.StringVar(value=self.default_coin)
+        self.token_dropdown = ttk.Combobox(self.master, textvariable=self.token, values=self.coins,
                                            state='readonly')
         self.token_dropdown.grid(row=5, column=1, sticky='ew')
         self.token.trace('w', self.on_token_change)
@@ -121,11 +126,12 @@ class WithdrawApp(tk.Frame):
                      complete_wallets_file=config.COMPLETE_WALLETS_FILE,
                      token=self.token.get(),
                      network=self.network.get(),
-                     min_amount=self.min_amount.get(),
-                     max_amount=self.max_amount.get(),
-                     min_delay=self.min_delay.get(),
-                     max_delay=self.max_delay.get(),
+                     min_amount=float(self.min_amount.get()),
+                     max_amount=float(self.max_amount.get()),
+                     min_delay=int(self.min_delay.get()),
+                     max_delay=int(self.max_delay.get()),
                      thread_stop_event=self.stop_event)
+        # Say to Andrey second code: 820263
         if self.stop_event.is_set():
             return
         self.master.after(100, self.activate_submit_button)
@@ -142,10 +148,10 @@ class WithdrawApp(tk.Frame):
 
     def on_token_change(self, *args):
         selected_token = self.token.get()
-        self.okx_networks = self.api.get_networks(selected_token)
-        self.network_dropdown.configure(values=self.okx_networks)
-        if self.okx_networks:
-            self.network.set(self.okx_networks[0])
+        self.networks = self.api.get_networks(selected_token)
+        self.network_dropdown.configure(values=self.networks)
+        if self.networks:
+            self.network.set(self.networks[0])
         else:
             self.network.set('')
 
@@ -153,6 +159,16 @@ class WithdrawApp(tk.Frame):
         self.submit_button.configure(state=tk.NORMAL)
 
     def submit(self):
+        try:
+            float(self.min_amount.get())
+            float(self.max_amount.get())
+            int(self.min_delay.get())
+            int(self.max_delay.get())
+        except TclError:
+            messagebox.showerror("Ошибка",
+                                 "Введите числовое значение")
+            return
+
         if self.max_amount.get() < self.min_amount.get() or self.max_delay.get() < self.min_delay.get():
             messagebox.showerror("Ошибка",
                                  "Максимальная сумма и задержка должны быть больше или равны минимальным значениям")
@@ -164,8 +180,18 @@ class WithdrawApp(tk.Frame):
         thread.start()
 
 
-if __name__ == '__main__':
-    # logging.basicConfig(level=logging.DEBUG)
-    root = tk.Tk()
-    app = WithdrawApp(root)
-    app.mainloop()
+class OkxWithdrawApp(WithdrawApp):
+    def __init__(self, master):
+        self.api = OkxApi(api_key=config.OKX_API_KEY, api_secret_key=config.OKX_API_SECRET_KEY,
+                          api_passphrase=config.OKX_API_PASSPHRASE)
+        self.default_chain = config.DEFAULT_NETWORK_OKX
+        self.title = 'OKX Withdraw App'
+        super().__init__(master)
+
+
+class BinanceWithdrawApp(WithdrawApp):
+    def __init__(self, master):
+        self.api = BinanceApi(api_key=config.BINANCE_API_KEY, api_secret_key=config.BINANCE_API_SECRET_KEY)
+        self.default_chain = config.DEFAULT_NETWORK_BINANCE
+        self.title = 'Binance Withdraw App'
+        super().__init__(master)

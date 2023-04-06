@@ -1,10 +1,31 @@
 # -*- coding: utf-8 -*-
-from api import API
-import config
+import random
 import logging
 import time
-import random
-from utils import random_float, setup_logging
+
+log_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')  # log message formatting
+
+
+def random_float(a, b, diff=1):
+    random_number = random.uniform(a, b)
+    try:
+        precision_a = len(str(a).split('.')[1])
+    except IndexError:
+        precision_a = 0
+    try:
+        precision_b = len(str(b).split('.')[1])
+    except IndexError:
+        precision_b = 0
+    precision = max(precision_a, precision_b)
+    return round(random_number, precision + diff)
+
+
+def setup_logging(logger, log_file):
+    # logging file handler
+    file_handler = logging.FileHandler(log_file, mode='a')
+    file_handler.setLevel(logging.DEBUG)
+    file_handler.setFormatter(log_formatter)
+    logger.addHandler(file_handler)
 
 
 def read_wallet_file(file_name):
@@ -30,32 +51,16 @@ def run_withdraw(api, wallets_file, complete_wallets_file, token, network,
             continue
         amount = random_float(min_amount, max_amount)
         delay = random.randint(min_delay, max_delay)
-        # print(token, amount, wallet, network, delay)
-        resp = api.withdraw_coin(token, amount, wallet, network)
-        if resp and resp['code'] == '0':
+        status, resp = api.withdraw_coin(token, amount, wallet, network)
+        if status:
             complete_wallets.add(wallet)
-            with open(config.COMPLETE_WALLETS_FILE, 'a') as fw:
+            with open(complete_wallets_file, 'a') as fw:
                 fw.write(f'{wallet}\n')
         else:
             continue
         if idx != len(wallets):
-            for sec in range(delay*10):
+            api.logger.debug(f'delay {delay}s')
+            for sec in range(delay * 10):
                 if thread_stop_event and thread_stop_event.is_set():
                     return
                 time.sleep(0.1)
-
-
-if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG)
-    okx_api = API(api_key=config.OKX_API_KEY, api_secret_key=config.OKX_API_SECRET_KEY, api_passphrase=config.OKX_API_PASSPHRASE)
-    if config.LOG_TO_FILE:
-        setup_logging(okx_api.logger, config.LOG_FILE)
-    run_withdraw(api=okx_api,
-                 wallets_file=config.WALLETS_FILE,
-                 complete_wallets_file=config.COMPLETE_WALLETS_FILE,
-                 token=config.DEFAULT_TOKEN,
-                 network=config.DEFAULT_NETWORK,
-                 min_amount=config.DEFAULT_MIN_AMOUNT,
-                 max_amount=config.DEFAULT_MAX_AMOUNT,
-                 min_delay=config.DEFAULT_MIN_DELAY,
-                 max_delay=config.DEFAULT_MAX_DELAY)

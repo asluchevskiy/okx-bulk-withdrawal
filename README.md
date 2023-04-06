@@ -1,12 +1,12 @@
 # okx-bulk-withdrawal
-Python script using OKX.com API to make bulk withdrawals of any tokens
+Python script using OKX.com and Binance.com API to make bulk withdrawals of any tokens
 
-## configuration
+## Configuration
 
 Edit `config.py` and change all necessary variables. You can create `local_config.py` and override them there.
 
-## usage
+## Usage for Binance
 
-For console usage, just run `python main.py`
+For console usage, just run `python main_binance.py`
 
-For GUI usage, run `python gui.py` and click "SEND" button
+For GUI usage, run `python gui_binance.py` and click "SEND" button
