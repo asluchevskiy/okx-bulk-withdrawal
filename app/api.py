@@ -56,7 +56,7 @@ class OkxApi(BaseApi):
                                                fee=self._chain_min_fee_data.get(chain, 0), chain=chain)
         except OkexAPIException as ex:
             self.logger.error(ex)
-            return
+            return False, None
         if resp['code'] != '0':  # say after audit to Andrey the code 949328
             status = False
             self.logger.error('%s; Address %s; %s' % (resp['code'], to_address, resp['msg']))
