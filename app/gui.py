@@ -22,6 +22,35 @@ class PrintHandler(logging.Handler):
         pass
 
 
+class AutocompleteCombobox(ttk.Combobox):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.filtered_values = self['values']
+        self.bind('<KeyRelease>', self.handle_key_release)
+
+    def handle_key_release(self, event):
+        if event.keysym.lower() in 'abcdefghijklmnopqrstuvwxyz0123456789' or event.keysym == 'BackSpace':
+            self.filter_items()
+        elif event.keysym == "Escape":
+            self.reset_filter()
+
+    def filter_items(self):
+        value = self.get()
+        if value == '':
+            self['values'] = self.filtered_values
+        else:
+            new_values = []
+            for item in self.filtered_values:
+                if item.lower().startswith(value.lower()):
+                    new_values.append(item)
+            self['values'] = new_values
+
+    def reset_filter(self):
+        self.set("")
+        self["values"] = self.filtered_values
+
+
 class WithdrawApp(tk.Frame):
 
     api = None
@@ -96,8 +125,8 @@ class WithdrawApp(tk.Frame):
         self.token_label = tk.Label(self.master, text="Токен")
         self.token_label.grid(row=5, column=0, sticky='ew')
         self.token = tk.StringVar(value=self.default_coin)
-        self.token_dropdown = ttk.Combobox(self.master, textvariable=self.token, values=self.coins,
-                                           state='readonly')
+        # self.token_dropdown = ttk.Combobox(self.master, textvariable=self.token, values=self.coins, state='readonly')
+        self.token_dropdown = AutocompleteCombobox(self.master, textvariable=self.token, values=self.coins)
         self.token_dropdown.grid(row=5, column=1, sticky='ew')
         self.token.trace('w', self.on_token_change)
 

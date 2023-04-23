@@ -43,7 +43,7 @@ class OkxApi(BaseApi):
                     self._chain_min_fee_data[coin['chain']] = coin['minFee']
             except OkexAPIException as ex:
                 self.logger.error(ex)
-        return list(self._currency_data.keys())
+        return sorted(list(self._currency_data.keys()))
 
     def get_networks(self, coin):
         self.get_coins()
@@ -78,7 +78,7 @@ class BinanceApi(BaseApi):
             for coin in resp:
                 if coin['coin'] not in self._coin_data:
                     self._coin_data[coin['coin']] = coin
-        return list(self._coin_data.keys())
+        return sorted(list(self._coin_data.keys()))
 
     def get_networks(self, coin):
         self.get_coins()
